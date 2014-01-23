@@ -31,3 +31,4 @@ You must have gone through the [WiringPi-Python Setup instructions](https://gith
 
 Full details at: [Dave's Blog](http://www.davidhunt.ie/?p=3349)
 
+If you would like to donate to the Lapse Pi Touch project to keep it active you can do so via [PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=Y3Y6NK98CZUZW)
