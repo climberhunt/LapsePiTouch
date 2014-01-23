@@ -19,4 +19,5 @@ Contents:
    :maxdepth: 1
 
    installation.rst
+   user_guide.rst
    learn_more.rst
