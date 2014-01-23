@@ -16,5 +16,5 @@ clean:
 	@make -C docs clean
 
 readthedocs:
-	curl -X POST http://readthedocs.org/build/LapsePiTouch
+	curl -X POST http://readthedocs.org/build/lapse-pi-touch
 
