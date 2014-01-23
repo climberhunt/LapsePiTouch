@@ -9,7 +9,7 @@ Read more about this project at `Dave's Blog <http://www.davidhunt.ie/?p=3349>`_
 
 Enjoy!
 
-.. image:: _images/overhead_shot.jpg
+.. image:: http://www.davidhunt.ie/wp-content/uploads/2014/01/lp_overhead.jpg
    :align: center
 
 
