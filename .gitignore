@@ -1,0 +1,10 @@
+*~
+.#*
+*#
+*.pyc
+.project
+.pydevproject
+.settings/
+docs/build/
+.DS_Store
+__pycache__
