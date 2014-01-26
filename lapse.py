@@ -122,6 +122,8 @@ def motorCallback(n): # Pass 1 (next setting) or -1 (prev setting)
 	global motorpinB
 	
 	if n == 1:
+		motorDirection = 1
+		motorpin = motorpinA
 		if motorRunning == 0:
 			motorRunning = 1
 			gpio.digitalWrite(motorpin,gpio.HIGH)
@@ -130,12 +132,15 @@ def motorCallback(n): # Pass 1 (next setting) or -1 (prev setting)
 			gpio.digitalWrite(motorpinA,gpio.LOW)
 			gpio.digitalWrite(motorpinB,gpio.LOW)
 	elif n == 2:
-		if motorDirection == 0:
-			motorDirection = 1
-			motorpin = motorpinA
+		motorDirection = 0
+		motorpin = motorpinB
+		if motorRunning == 0:
+			motorRunning = 1
+			gpio.digitalWrite(motorpin,gpio.HIGH)
 		else:
-			motorDirection = 0
-			motorpin = motorpinB
+			motorRunning = 0
+			gpio.digitalWrite(motorpinA,gpio.LOW)
+			gpio.digitalWrite(motorpinB,gpio.LOW)
 
 def numericCallback(n): # Pass 1 (next setting) or -1 (prev setting)
 	global screenMode
@@ -291,16 +296,16 @@ buttons = [
 
   # Screen mode 0 is main view screen of current status
   [Button((  5,180,120, 60), bg='start', cb=startCallback, value=1),
-   Button((130,180, 60, 60), bg='cog', cb=viewCallback, value=0),
-   Button((195,180,120, 60), bg='stop', cb=startCallback, value=0)],
+   Button((130,180, 60, 60), bg='cog',   cb=viewCallback, value=0),
+   Button((195,180,120, 60), bg='stop',  cb=startCallback, value=0)],
 
   # Screen 1 for changing values and setting motor direction
-  [Button((260,  0, 60, 60), bg='cog',    cb=valuesCallback, value=1),
-   Button((260, 60, 60, 60), bg='cog',    cb=valuesCallback, value=2),
-   Button((260,120, 60, 60), bg='cog',    cb=valuesCallback, value=3),
-   Button((  0,180,160, 60), bg='ok',     cb=valuesCallback, value=-1),
-   Button((170,180, 60, 60), bg='right',  cb=motorCallback, value=1),
-   Button((240,180, 60, 60), bg='reverse',cb=motorCallback, value=2)],
+  [Button((260,  0, 60, 60), bg='cog',   cb=valuesCallback, value=1),
+   Button((260, 60, 60, 60), bg='cog',   cb=valuesCallback, value=2),
+   Button((260,120, 60, 60), bg='cog',   cb=valuesCallback, value=3),
+   Button((  0,180,160, 60), bg='ok',    cb=valuesCallback, value=-1),
+   Button((160,180, 70, 60), bg='left',  cb=motorCallback, value=1),
+   Button((230,180, 70, 60), bg='right', cb=motorCallback, value=2)],
 
   # Screen 2 for numeric input
   [Button((  0,  0,320, 60), bg='box'),
