@@ -11,7 +11,7 @@
 # based on cam.py by Phil Burgess / Paint Your Dragon for Adafruit Industries.
 # BSD license, all text above must be included in any redistribution.
 
-import wiringpi
+import wiringpi2
 import atexit
 import cPickle as pickle
 import errno
@@ -23,6 +23,7 @@ import threading
 from pygame.locals import *
 from subprocess import call  
 from time import sleep
+from datetime import datetime, timedelta
 
 # UI classes ---------------------------------------------------------------
 
@@ -120,8 +121,6 @@ def motorCallback(n): # Pass 1 (next setting) or -1 (prev setting)
 	global motorpinA
 	global motorpinB
 	
-	print buttons[2][2].bg
-
 	if n == 1:
 		if motorRunning == 0:
 			motorRunning = 1
@@ -141,7 +140,6 @@ def motorCallback(n): # Pass 1 (next setting) or -1 (prev setting)
 def numericCallback(n): # Pass 1 (next setting) or -1 (prev setting)
 	global screenMode
 	global numberstring
-	print "Numeric " + str(n)
 	if n < 10:
 		numberstring = numberstring + str(n)
 	elif n == 10:
@@ -198,18 +196,19 @@ def doneCallback(): # Exit settings
 	screenMode = 0 # Switch back to main window
 
 def startCallback(n): # start/Stop the timelapse thread
-	global t, busy
+	global t, busy, threadExited
 	global currentframe
 	if n == 1: 
 		if busy == False:
-			print "Start thread"
+			if (threadExited == True):
+				# Re-instanciate the object for the next start
+				t = threading.Thread(target=timeLapse)
+				threadExited = False
 			t.start()
 	if n == 0:
 		if busy == True:
-			print "Stop thread"
 			busy = False
 			t.join()
-			print "Stopped thread"
 			currentframe = 0
 			# Re-instanciate the object for the next time around.
 			t = threading.Thread(target=timeLapse)
@@ -221,23 +220,20 @@ def timeLapse():
 	global motorpin
 	global shutterpin
 	global backlightpin
-	global busy
+	global busy, threadExited
 	global currentframe
 
 	busy = True
 
-	for i in range(1,v['Images']):
+	for i in range( 1 , v['Images'] + 1 ):
 		if busy == False:
 			break
 		currentframe = i
 		gpio.digitalWrite(motorpin,gpio.HIGH)
 		pulse = float(v['Pulse'])/1000.0
-		print "pulse = " + str(pulse)
 		sleep(pulse)
 		gpio.digitalWrite(motorpin,gpio.LOW)
 		sleep(settling_time)
-
-		print "Image " + str(i) + " of " + str(v['Images'])
 
 		# disable the backlight, critical for night timelapses, also saves power
 		os.system("echo '0' > /sys/class/gpio/gpio252/value")
@@ -247,15 +243,17 @@ def timeLapse():
 		#  enable the backlight
 		os.system("echo '1' > /sys/class/gpio/gpio252/value")
 		interval = float(v['Interval'])/1000.0
-		print "interval = " + str(interval)
-		sleep(interval)
-	print "Thread exited"
-
+		if (interval > shutter_length):
+			sleep(interval - shutter_length)
+	currentframe = 0
+	busy = False
+	threadExited = True
 
 # Global stuff -------------------------------------------------------------
 
 t = threading.Thread(target=timeLapse)
 busy            = False
+threadExited    = False
 screenMode      =  0      # Current screen mode; default = viewfinder
 screenModePrior = -1      # Prior screen mode (for detecting changes)
 iconPath        = 'icons' # Subdirectory containing UI bitmaps (PNG format)
@@ -271,8 +269,8 @@ motorpin       = motorpinA
 backlightpin   = 252
 currentframe   = 0
 framecount     = 100
-settling_time  = 0.5
-shutter_length = 2
+settling_time  = 0.2
+shutter_length = 0.2
 interval_delay = 0.2
 dict_idx	   = "Interval"
 v = { "Pulse": 100,
@@ -384,7 +382,7 @@ for s in buttons:        # For each screenful of buttons...
 
 # Set up GPIO pins
 print "Init GPIO pins..."
-gpio = wiringpi.GPIO(wiringpi.GPIO.WPI_MODE_GPIO)  
+gpio = wiringpi2.GPIO(wiringpi2.GPIO.WPI_MODE_GPIO)  
 gpio.pinMode(shutterpin,gpio.OUTPUT)  
 gpio.pinMode(motorpinA,gpio.OUTPUT)
 gpio.pinMode(motorpinB,gpio.OUTPUT)
@@ -424,12 +422,10 @@ while(True):
     for event in pygame.event.get():
       if(event.type is MOUSEBUTTONDOWN):
         pos = pygame.mouse.get_pos()
-        print pos
         for b in buttons[screenMode]:
           if b.selected(pos): break
       elif(event.type is MOUSEBUTTONUP):
         motorRunning = 0
-        print "motorRunning = 0"
         gpio.digitalWrite(motorpinA,gpio.LOW)
         gpio.digitalWrite(motorpinB,gpio.LOW)
 
@@ -483,10 +479,16 @@ while(True):
     screen.blit(label, (160, 50))
     label = myfont.render(str(currentframe) + " of " + str(v['Images']) , 1, (255,255,255))
     screen.blit(label, (160, 90))
-    label = myfont.render("1hr 20mins" , 1, (255,255,255))
+
+    intervalLength = float((v['Pulse'] + v['Interval'] + (settling_time*1000) + (shutter_length*1000)))
+    remaining = float((intervalLength * (v['Images'] - currentframe)) / 1000)
+    sec = timedelta(seconds=int(remaining))
+    d = datetime(1,1,1) + sec
+    remainingStr = "%dh%dm%ds" % (d.hour, d.minute, d.second)
+
+    label = myfont.render(remainingStr , 1, (255,255,255))
     screen.blit(label, (160, 130))
   pygame.display.update()
 
   screenModePrior = screenMode
-
 
