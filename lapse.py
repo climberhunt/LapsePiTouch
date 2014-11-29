@@ -20,6 +20,9 @@ import io
 import os
 import pygame
 import threading
+import signal
+import sys
+
 from pygame.locals import *
 from subprocess import call  
 from time import sleep
@@ -254,6 +257,12 @@ def timeLapse():
 	busy = False
 	threadExited = True
 
+
+def signal_handler(signal, frame):
+	print 'got SIGTERM'
+	pygame.quit()
+	sys.exit()
+
 # Global stuff -------------------------------------------------------------
 
 t = threading.Thread(target=timeLapse)
@@ -417,7 +426,7 @@ sleep(2)
 
 # Main loop ----------------------------------------------------------------
 
-
+signal.signal(signal.SIGTERM, signal_handler)
 
 print "mainloop.."
 while(True):
